@@ -1,0 +1,95 @@
+{
+  "environment": "Node.js 22 + XML DOM adapter; no physical iPhone/browser GUI test",
+  "books": [
+    {
+      "name": "哈利·波特与魔法石",
+      "order": 1,
+      "chapters": 17,
+      "cover": true,
+      "paragraphs": 5107,
+      "corrected": 46,
+      "unpaired": 1,
+      "multi": 497,
+      "actual": 5107
+    },
+    {
+      "name": "哈利·波特与密室",
+      "order": 2,
+      "chapters": 18,
+      "cover": true,
+      "paragraphs": 5204,
+      "corrected": 74,
+      "unpaired": 0,
+      "multi": 639,
+      "actual": 5204
+    },
+    {
+      "name": "哈利·波特与阿兹卡班的囚徒",
+      "order": 3,
+      "chapters": 22,
+      "cover": true,
+      "paragraphs": 8093,
+      "corrected": 3,
+      "unpaired": 2,
+      "multi": 161,
+      "actual": 8093
+    },
+    {
+      "name": "哈利·波特与火焰杯",
+      "order": 4,
+      "chapters": 37,
+      "cover": true,
+      "paragraphs": 10384,
+      "corrected": 362,
+      "unpaired": 4,
+      "multi": 1379,
+      "actual": 10384
+    },
+    {
+      "name": "哈利·波特与凤凰社",
+      "order": 5,
+      "chapters": 38,
+      "cover": true,
+      "paragraphs": 15152,
+      "corrected": 845,
+      "unpaired": 8,
+      "multi": 2061,
+      "actual": 15152
+    },
+    {
+      "name": "哈利·波特与混血王子",
+      "order": 6,
+      "chapters": 30,
+      "cover": true,
+      "paragraphs": 9760,
+      "corrected": 563,
+      "unpaired": 4,
+      "multi": 1314,
+      "actual": 9760
+    },
+    {
+      "name": "哈利·波特与死亡圣器",
+      "order": 7,
+      "chapters": 36,
+      "cover": true,
+      "paragraphs": 11339,
+      "corrected": 766,
+      "unpaired": 4,
+      "multi": 1579,
+      "actual": 11339
+    }
+  ],
+  "passed": [
+    "real seven EPUB ZIP decompression",
+    "metadata, cover, chapter extraction",
+    "198 chapters",
+    "all nonempty parsed paragraph texts retained by grouping",
+    "language reclassification and multi-paragraph grouping",
+    "JavaScript syntax checks"
+  ],
+  "blocked": [
+    "Browser GUI test: environment returned ERR_BLOCKED_BY_ADMINISTRATOR",
+    "iOS Safari installation and offline opening not yet verified",
+    "semantic bilingual alignment and source completeness not verified"
+  ]
+}

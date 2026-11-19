@@ -1,0 +1,5 @@
+*.epub
+*.azw3
+*.mobi
+private-books/
+.DS_Store
