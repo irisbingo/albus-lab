@@ -1,0 +1,11 @@
+{
+  "version": "1.1.0",
+  "node": "22.16.0",
+  "tests": 13,
+  "passed": 13,
+  "failed": 0,
+  "scope": "模拟 Web Speech API 的语音逻辑测试；app.js, audio.js, sw.js 语法检查通过",
+  "browser_ui": "未完成，Chromium 打开本地测试地址时返回 ERR_BLOCKED_BY_ADMINISTRATOR",
+  "device": "未验证 iPhone / 华为真机音色、锁屏、后台、离线及 UI",
+  "storage": "未修改 store.js 或原存储键，只增加 audioSettings"
+}
