@@ -1,0 +1,13 @@
+{
+  "version": "1.1.2",
+  "node": "22.16.0",
+  "new_update_tests": 19,
+  "existing_regression_tests": 20,
+  "total_tests": 39,
+  "passed": 39,
+  "failed": 0,
+  "scope": "模拟 Service Worker 注册、版本查询、下载、激活、重载和缓存管理；原有 EPUB 及系统朗读回归测试；JS 语法检查",
+  "browser_ui": "Chromium 本地测试导航被环境策略拒绝：ERR_BLOCKED_BY_ADMINISTRATOR",
+  "device": "iPhone / 华为实际更新、页面交互和数据保留待真机验收",
+  "storage": "store.js、epub.js 和 audio.js 未修改；不清除 IndexedDB 或 localStorage"
+}
