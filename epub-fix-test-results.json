@@ -1,0 +1,12 @@
+{
+  "version": "1.1.1",
+  "automated_tests": 20,
+  "passed": 20,
+  "source_books": 7,
+  "chapters": 198,
+  "source_paragraphs": 65039,
+  "split_candidates": 9336,
+  "non_whitespace_character_loss": 0,
+  "fresh_import_vs_legacy_repair_mismatches": 0,
+  "limitations": "Heuristic split; semantic alignment and iPhone migration are not verified. The number of split candidates does not prove the splits are correct."
+}

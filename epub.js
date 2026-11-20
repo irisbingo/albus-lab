@@ -28,15 +28,54 @@ export function language(t,tag=''){
   const c=(t.match(/[\u3400-\u9fff\uf900-\ufaff]/g)||[]).length,e=(t.match(/[a-zA-Z]/g)||[]).length;
   return c&&c>=e*.18?'zh':e?'en':tag.startsWith('zh')?'zh':'en';
 }
-export function groupParagraphs(paras){
+// Split bilingual text glued together by the source EPUB. Keep short embedded
+// Latin abbreviations/names in Chinese unless there is evidence of a separate sentence.
+export function splitParagraph(text, tag=''){
+  const han=/[\u3400-\u9fff\uf900-\ufaff]/;
+  if(!han.test(text)||!/[A-Za-z]/.test(text))return [{lang:language(text,tag),text}];
+  const out=[];let cursor=0;
+  const push=(lang,t)=>{if(t.trim())out.push({lang,text:t.trim()});};
+  for(const match of text.matchAll(/[^\u3400-\u9fff\uf900-\ufaff]+/g)){
+    const run=match[0],i=match.index,first=run.search(/[A-Za-z]/);if(first<0)continue;
+    const words=run.match(/[A-Za-z]+(?:['’][A-Za-z]+)*/g)||[];
+    const prefix=i===0;
+    // Exclude short annotations such as R.J., O.W.Ls, and Chinese inline glosses.
+    const standalone=words.length===1&&(/^[\s"'“‘—-]*[A-Za-z]+[^A-Za-z]*[!?]/.test(run)||/^[\s"'“‘]*[A-Za-z]{2,}[.!?]["'”’]?\s*[“‘]?$/.test(run)||/^[\s"'“‘]*[A-Z]{4,}\s*$/.test(run)||/^[\s"'“‘]*[A-Za-z]{2,}\s*[—,]["'”’]?\s*[“‘]?$/.test(run));
+    const sentence=words.length>=2&&(/[.!?…—,;:]["'”’]*\s*[“‘（《【「『]*\s*$/.test(run)||words.length>=4);
+    if(prefix?!(sentence||standalone):!(words.length>=7||(words.length>=4&&/[.!?…]["'”’]*\s*[“‘]?\s*$/.test(run))))continue;
+    let start=i,end=i+run.length;
+    if(!prefix){start=i+first;while(start>i&&/["'“‘(—-]/.test(text[start-1]))start--;}
+    // Chinese opening punctuation belongs to the following Chinese text.
+    if(end<text.length){const tail=text.slice(start,end).match(/[“‘（《【「『]+\s*$/);if(tail)end-=tail[0].length;}
+    if(end<=start)continue;
+    push('zh',text.slice(cursor,start));push('en',text.slice(start,end));cursor=end;
+  }
+  if(!out.length)return [{lang:language(text,tag),text}];
+  push('zh',text.slice(cursor));return out;
+}
+export function groupParagraphs(paras, mapping=null){
   const groups=[];let g=null;
   for(const p of paras){
-    // A new English run after a Chinese run starts the next reading block.
-    if(!g||(p.lang==='en'&&g.zh.length&&g.en.length)){g={en:[],zh:[]};groups.push(g);}
-    if(p.lang==='en'&&g.zh.length&&!g.en.length){g={en:[],zh:[]};groups.push(g);}
+    if(!g||(p.lang==='en'&&g.zh.length)){g={en:[],zh:[]};groups.push(g);}
+    if(mapping&&p.origin!==undefined&&mapping[p.origin]===undefined)mapping[p.origin]=groups.length-1;
     g[p.lang].push(p.text);
   }
   return groups;
+}
+// Old imports stored full text, so repair them in memory without overwriting the
+// IndexedDB record. Position markers distinguish old vs repaired group indices.
+export function repairBook(book){
+  if(book.layoutVersion===2)return {book,maps:null};
+  const maps=[];const chapters=book.chapters.map(ch=>{
+    const mapping=[];maps.push(mapping);const paras=[];
+    ch.groups.forEach((g,origin)=>{for(const lang of ['en','zh'])for(const t of g[lang])for(const p of splitParagraph(t,lang))paras.push({...p,origin});});
+    return {...ch,groups:groupParagraphs(paras,mapping)};
+  });
+  return {book:{...book,chapters,layoutVersion:2},maps};
+}
+export function repairPosition(pos,maps){
+  if(!pos||pos.layoutVersion===2||!maps)return pos;
+  return {...pos,block:maps[pos.chapter]?.[pos.block]??pos.block,layoutVersion:2};
 }
 export async function importEpub(file,onProgress=()=>{}){
   if(file.size>70*1024*1024)throw Error('单本 EPUB 不能超过 70 MB');const z=zipIndex(await file.arrayBuffer());
@@ -49,7 +88,7 @@ export async function importEpub(file,onProgress=()=>{}){
   const chapters=[];let corrected=0,paragraphs=0,unpaired=0,multi=0;
   for(let i=0;i<selected.length;i++){
     const href=selected[i].getAttribute('href');const doc=new DOMParser().parseFromString(await read(path(opf,href)),'text/html');const paras=[];
-    for(const p of doc.querySelectorAll('body p')){const t=tidy(p.textContent);if(!t)continue;const tag=p.getAttribute('lang')||p.getAttribute('xml:lang')||p.className||'';const lang=language(t,tag);if(tag&&!tag.startsWith(lang))corrected++;paras.push({text:t,lang});}
+    for(const p of doc.querySelectorAll('body p')){const t=tidy(p.textContent);if(!t)continue;const tag=p.getAttribute('lang')||p.getAttribute('xml:lang')||p.className||'';const lang=language(t,tag);if(tag&&!tag.startsWith(lang))corrected++;paras.push(...splitParagraph(t,tag));}
     if(!paras.length)continue;const groups=groupParagraphs(paras);paragraphs+=paras.length;unpaired+=groups.filter(g=>!g.en.length||!g.zh.length).length;multi+=groups.filter(g=>g.en.length>1||g.zh.length>1).length;
     const heading=tidy(doc.querySelector('h1')?.textContent||`Chapter ${chapters.length+1}`);const chinese=tidy(doc.querySelector('h2')?.textContent||`第${chapters.length+1}章`);
     chapters.push({en:heading,zh:chinese,groups});onProgress((i+1)/selected.length);
@@ -58,5 +97,5 @@ export async function importEpub(file,onProgress=()=>{}){
   let cover=null;const coverId=names(pack,'meta').find(m=>m.getAttribute('name')==='cover')?.getAttribute('content');const ci=items.get(coverId)||[...items.values()].find(i=>(i.getAttribute('properties')||'').split(' ').includes('cover-image'));
   if(ci){const type=ci.getAttribute('media-type');if(['image/jpeg','image/png','image/webp','image/gif'].includes(type))try{cover=new Blob([await z.get(path(opf,ci.getAttribute('href')))],{type});}catch{}}
   const hp=['魔法石','密室','阿兹卡班','火焰杯','凤凰社','混血王子','死亡圣器'];const order=zh.includes('哈利')?hp.findIndex(x=>zh.includes(x))+1:0;
-  return {id:ident,en,zh,order:order||99,cover,chapters,stats:{paragraphs,corrected,unpaired,multi},imported:Date.now()};
+  return {id:ident,en,zh,layoutVersion:2,order:order||99,cover,chapters,stats:{paragraphs,corrected,unpaired,multi},imported:Date.now()};
 }
