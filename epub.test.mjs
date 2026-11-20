@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {splitParagraph,groupParagraphs,repairBook,repairPosition} from './epub.js';
+test('English dialogue glued to Chinese',()=>assert.deepEqual(splitParagraph('"Really?" she asked.“真的吗？”她问。','zh'),[{lang:'en',text:'"Really?" she asked.'},{lang:'zh',text:'“真的吗？”她问。'}]));
+test('short English dialogues',()=>assert.deepEqual(splitParagraph('"Yes!"“是的！”').map(x=>x.lang),['en','zh']));
+test('Chinese with inline Latin abbreviations stays Chinese',()=>assert.equal(splitParagraph('他穿着T恤，胸前有一个W字母。').length,1));
+test('Chinese followed by English then Chinese',()=>assert.deepEqual(splitParagraph('她笑了。“Good morning, I am so happy to see you.”“早上好，我很高兴见到你。”').map(x=>x.lang),['zh','en','zh']));
+test('preserve content, including punctuation',()=>{const t='"Where?" he asked. “在哪里？”他问。';assert.equal(splitParagraph(t).map(p=>p.text).join('').replace(/\s/g,''),t.replace(/\s/g,''));});
+test('migration splits group and remaps position, idempotent',()=>{const b={chapters:[{groups:[{en:['Hello.'],zh:['你好。','"Good morning."“早上好。”']},{en:['Goodbye.'],zh:['再见。']}]}]};const {book,maps}=repairBook(b);assert.equal(book.chapters[0].groups.length,3);assert.deepEqual(maps,[[0,2]]);const pos=repairPosition({chapter:0,block:1},maps);assert.equal(pos.block,2);assert.deepEqual(repairPosition(pos,maps),pos);assert.equal(repairBook(book).maps,null);assert.equal(b.chapters[0].groups.length,2);});
+test('new import grouping matches repair of older import',()=>{const paras=[{lang:'en',text:'Hello.'},{lang:'zh',text:'你好。'},{lang:'zh',text:'"Good morning."“早上好。”'},{lang:'en',text:'Goodbye.'},{lang:'zh',text:'再见。'}];assert.deepEqual(repairBook({chapters:[{groups:groupParagraphs(paras)}]}).book.chapters[0].groups,groupParagraphs(paras.flatMap(p=>splitParagraph(p.text,p.lang))));});
