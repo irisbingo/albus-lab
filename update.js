@@ -1,5 +1,5 @@
 // App-shell updates only. Never touch IndexedDB, book files or localStorage here.
-export const VERSION='1.1.2';
+export const VERSION='1.1.3';
 export function workerVersion(worker,timeout=2500){
   if(!worker)return Promise.resolve(null);
   return new Promise(resolve=>{

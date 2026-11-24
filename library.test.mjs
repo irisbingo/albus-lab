@@ -1,0 +1,14 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+const rows=new Map();let fail=false,committed=false;
+globalThis.indexedDB={open(name,version){assert.equal(name,'albus-lab');assert.equal(version,1);const req={result:{transaction(name,mode){assert.equal(name,'books');const t={objectStore(store){assert.equal(store,'books');return {delete(id){assert.equal(mode,'readwrite');committed=false;queueMicrotask(()=>{if(fail){t.error=Error('write failed');t.onabort();}else{rows.delete(id);committed=true;t.oncomplete();}});},put(book){queueMicrotask(()=>{rows.set(book.id,book);t.oncomplete();});},getAll(){const r={};queueMicrotask(()=>{r.result=[...rows.values()];r.onsuccess();});return r;}};}};return t;}}};queueMicrotask(()=>req.onsuccess());return req;}};
+const {deleteBook,save,books,withoutBookRecords,shelfEntries}=await import('./store.js');
+const original={id:'original',order:1,zh:'原版'},edition={id:'edition',order:1,zh:'新版'},other={id:'other',order:2},extra={id:'extra',order:99};
+test('shelf keeps all seven placeholders when empty',()=>assert.deepEqual(shelfEntries([]).map(e=>e.index),[0,1,2,3,4,5,6]));
+test('all editions visible including two of the same volume',()=>assert.deepEqual(shelfEntries([original,edition,other,extra]).filter(e=>e.book).map(e=>e.book.id),['original','edition','other','extra']));
+test('last edition removed restores only its placeholder',()=>{const entries=shelfEntries([other,extra]);assert.equal(entries[0].book,null);assert.equal(entries[1].book.id,'other');});
+test('delete targets exact id and waits until commit',async()=>{await save(original);await save(edition);await save(other);await deleteBook('original');assert.equal(committed,true);assert.deepEqual((await books()).map(b=>b.id),['edition','other']);});
+test('failed delete leaves stored book intact',async()=>{fail=true;try{await assert.rejects(deleteBook('edition'),/write failed/);assert.ok((await books()).some(b=>b.id==='edition'));}finally{fail=false;}});
+test('cleanup only removes chosen edition progress and bookmarks',()=>{const p={original:{chapter:2},edition:{chapter:5},other:{chapter:3}};const m=[{id:'original',block:0},{id:'edition',block:1},{id:'other',block:2},{id:'original',block:3}];assert.deepEqual(withoutBookRecords('original',p,m),{progress:{edition:p.edition,other:p.other},marks:[m[1],m[2]]});assert.equal(Object.keys(p).length,3);assert.equal(m.length,4);});
+test('deleting an unknown id preserves all records',()=>{const p={edition:{chapter:5}},m=[{id:'edition'}];assert.deepEqual(withoutBookRecords('missing',p,m),{progress:p,marks:m});});
+test('deleted edition can be imported again independently',async()=>{await save(original);assert.deepEqual((await books()).map(b=>b.id),['edition','other','original']);});
