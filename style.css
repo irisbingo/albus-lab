@@ -14,3 +14,5 @@
 
 /* V1.1.2 — updates and current version */
 .update-banner{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;margin:18px 0 0;padding:13px}.update-banner strong{font-size:14px;color:var(--accent)}.update-banner .action,.about-row .action{flex:none;white-space:nowrap}.update-message{margin-top:4px}.about-section h3{font-size:14px;margin:0 0 8px;color:var(--accent)}.about-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}.about-section p{margin:12px 0 0}
+
+.shelf-actions{display:flex;align-items:center;gap:7px}.shelf-actions .action{white-space:nowrap;padding:9px 10px}.library-manager{display:grid;gap:0}.library-row{display:flex;align-items:center;gap:12px;padding:15px 0;border-top:1px solid var(--line)}.library-row strong{font-size:14px;font-weight:550;overflow-wrap:anywhere}.library-row .small{overflow-wrap:anywhere;margin-top:4px}.delete-book{color:#a34738;border-color:#a34738;flex:none;min-height:44px}body[data-theme=dark] .delete-book{color:#e0a196;border-color:#e0a196}

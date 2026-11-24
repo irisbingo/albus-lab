@@ -1,4 +1,4 @@
-const VERSION='1.1.2';
+const VERSION='1.1.3';
 const CACHE=`albus-shell-v${VERSION}`;
 const ASSETS=['./','./index.html','./style.css','./app.js','./audio.js','./epub.js','./store.js','./update.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{
